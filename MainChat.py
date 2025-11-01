@@ -30,38 +30,6 @@ from langchain_community.vectorstores import DeepLake
 os.environ["USE_TF"] = "0"
 os.environ["TRANSFORMERS_NO_TF"] = "1"
 
-def query_database(cfg: Dict, query: str, k: int = None):
-    """
-    Devuelve los fragmentos más similares a la query pasada como string.
-    """
-    dl_cfg = cfg["deeplake"]
-    dataset_path = os.path.expanduser(dl_cfg["dataset_path"])
-    read_only = bool(dl_cfg.get("read_only", True))
-
-    emb_cfg = cfg["embedding"]
-    model_name = emb_cfg["model_name"]
-    device = emb_cfg.get("device", "cpu")
-    normalize_embeddings = bool(emb_cfg.get("normalize_embeddings", True))
-
-    if k is None:
-        k = int(cfg["retrieval"].get("k", 5))
-
-    embeddings = HuggingFaceEmbeddings(
-        model_name=model_name,
-        model_kwargs={"device": device},
-        encode_kwargs={"normalize_embeddings": normalize_embeddings}
-    )
-
-    db = DeepLake(dataset_path=dataset_path, embedding=embeddings, read_only=read_only)
-
-    try:
-        results = db.similarity_search_with_relevance_scores(query, k=k)
-        return results
-    except Exception:
-        candidates = db.similarity_search(query, k=k)
-        texts = [d.page_content for d in candidates]
-        ranking = _rank_with_explicit_cosine(embeddings, query, texts)
-        return [(candidates[i_doc], score) for i_doc, score in ranking]
 
 # ----------------------------------------------------------------------
 # FUNCIÓN: CARGAR CONFIGURACIÓN
@@ -189,6 +157,37 @@ def interactive_query(cfg: Dict) -> None:
     # BUCLE INTERACTIVO DE CONSULTAS
     # --------------------------------------------------------------
     while True:
+        user_input = input("👤 Tú: ")
+        if user_input.lower() in ["salir", "exit", "quit"]:
+            print("👋 Hasta luego.")
+            break
+
+        try:
+            response = llm.invoke([HumanMessage(content=Memory + Meta_Promt + user_input)])
+            try:
+                # Si es un AIMessage (objeto de mensaje)
+                print(f"🤖 Bot: {response.content.strip()}\n")
+            except AttributeError:
+                # Si es un dict o lista de mensajes (caso nuevo en langchain_openai)
+                if isinstance(response, dict) and "content" in response:
+                    print(f"🤖 Bot: {response['content'].strip()}\n")
+                elif isinstance(response, list) and len(response) > 0:
+                    print(f"🤖 Bot: {response[0].content.strip()}\n")
+                else:
+                    print(f"🤖 Bot: {response}\n")
+
+            Memory += "\n" + response.content.strip()
+            Memory = SummaryPromt(Memory)
+
+        except Exception as e:
+            print(f"❌ Error: {e}\n")
+
+
+
+
+
+
+    while True:
         query = input("Consulta: ").strip()
 
         # Comando de salida
@@ -247,4 +246,3 @@ if __name__ == "__main__":
 
     # Inicia el modo de consulta interactiva
     interactive_query(cfg)
-

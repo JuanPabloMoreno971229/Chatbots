@@ -26,14 +26,21 @@ print("Modelo de embeddings 'gte-small' cargado correctamente.\n")
 # ==============================================
 # Lista de frases base que servirán como referencia o "ancla"
 # para comparar con los textos que el usuario escriba.
-textos_hogar = [
-    "casa", "hogar", "habitación", "sala", "comedor",
-    "el gato duerme en el sofá", "la comida está en la mesa",
-    "la luz del baño está encendida", "abro la puerta del cuarto"
+# textos_hogar = [
+#     "casa", "hogar", "habitación", "sala", "comedor",
+#     "el gato duerme en el sofá", "la comida está en la mesa",
+#     "la luz del baño está encendida", "abro la puerta del cuarto"
+# ]
+
+textos_f1 = [
+    "monoplaza", "pit stop", "parrilla de salida", "vuelta rápida", "aerodinámica",
+    "el piloto entra a boxes", "el equipo ajusta las alas delanteras",
+    "la carrera comienza con la vuelta de formación",
+    "el motor está en modo de clasificación", "hay bandera amarilla en el sector 2"
 ]
 
 # Genera los embeddings del diccionario base.
-embeddings_base = model.encode(textos_hogar)
+embeddings_base = model.encode(textos_f1)
 
 # Estas listas vacías guardarán los textos y embeddings
 # que el usuario ingrese durante la sesión interactiva.
@@ -43,7 +50,7 @@ embeddings_usuario = []
 # ==============================================
 # BUCLE INTERACTIVO DE ENTRADA DEL USUARIO
 # ==============================================
-print("Escribe una palabra o frase relacionada con el hogar.")
+print("Escribe una palabra o frase relacionada con formula 1.")
 print("Escribe 'salir' o 'exit' para finalizar.\n")
 
 while True:
@@ -75,11 +82,11 @@ while True:
 # ==============================================
 # Si el usuario ingresó textos, los unimos con los embeddings base.
 if embeddings_usuario:
-    textos_total = textos_hogar + textos_usuario
+    textos_total = textos_f1 + textos_usuario
     embeddings_total = np.vstack([embeddings_base, np.vstack(embeddings_usuario)])
 else:
     # Si no escribió nada, solo se grafican los textos base
-    textos_total = textos_hogar
+    textos_total = textos_f1
     embeddings_total = embeddings_base
 
 # ==============================================
